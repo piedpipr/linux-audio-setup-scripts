@@ -91,7 +91,7 @@ sudo adduser $USER audio
 # at ~/REAPER.
 # ---------------------------
 notify "REAPER"
-wget -O reaper.tar.xz http://reaper.fm/files/6.x/reaper675_linux_x86_64.tar.xz
+wget -O reaper.tar.xz http://reaper.fm/files/6.x/reaper683_linux_x86_64.tar.xz
 mkdir ./reaper
 tar -C ./reaper -xf reaper.tar.xz
 ./reaper/reaper_linux_x86_64/install-reaper.sh --install ~/ --integrate-desktop
@@ -111,10 +111,11 @@ sudo mkdir -pm755 /etc/apt/keyrings
 sudo wget -O /etc/apt/keyrings/winehq-archive.key https://dl.winehq.org/wine-builds/winehq.key
 sudo wget -NP /etc/apt/sources.list.d/ https://dl.winehq.org/wine-builds/ubuntu/dists/jammy/winehq-jammy.sources
 sudo apt update
-sudo apt install --install-recommends winehq-staging -y
 
 # Ubuntu 22.04 KDE Neon users report problems with the libpoppler-glib8 dependency. The solution is to downgrade this package to the official Ubuntu version.
-sudo apt install libpoppler-glib8:{i386,amd64}=22.02.0-2ubuntu0.1 --allow-downgrades -y
+sudo apt install libpoppler-glib8:{i386,amd64}=22.02.0-2ubuntu0.2 --allow-downgrades -y
+
+sudo apt install --install-recommends winehq-staging -y
 
 # Winetricks
 sudo apt install cabextract -y
@@ -142,7 +143,7 @@ cp -r ~/.wine ~/.wine-base
 # NOTE: When you run this script, there may be a newer version of yabridge available.
 # Check https://github.com/robbert-vdh/yabridge/releases and update the version numbers below if necessary
 notify "Install yabridge"
-wget -O yabridge.tar.gz https://github.com/robbert-vdh/yabridge/releases/download/5.0.3/yabridge-5.0.3.tar.gz
+wget -O yabridge.tar.gz https://github.com/robbert-vdh/yabridge/releases/download/5.0.5/yabridge-5.0.5.tar.gz
 mkdir -p ~/.local/share
 tar -C ~/.local/share -xavf yabridge.tar.gz
 rm yabridge.tar.gz

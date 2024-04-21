@@ -1,9 +1,9 @@
 #!/bin/bash
 # ---------------------------
-# This is a bash script for configuring Arch for pro audio USING PIPEWIRE.
+# This is a bash script for configuring Fedora 38 for pro audio USING PIPEWIRE.
 # ---------------------------
 # NOTE: Execute this script by running the following command on your system:
-# wget -O ~/install-audio.sh https://raw.githubusercontent.com/brendaningram/linux-audio-setup-scripts/main/arch/install-audio.sh && chmod +x ~/install-audio.sh && ~/install-audio.sh
+# wget -O ~/install-audio.sh https://raw.githubusercontent.com/brendaningram/linux-audio-setup-scripts/main/fedora/38/install-audio.sh && chmod +x ~/install-audio.sh && ~/install-audio.sh
 
 # Exit if any command fails
 set -e
@@ -18,46 +18,28 @@ notify () {
   echo "--------------------------------------------------------------------"
 }
 
-# ------------------------------------------------------------------------------------
-# Install packages
-# ------------------------------------------------------------------------------------
-notify "Update our system"
-sudo pacman -Syu
-
-# Audio
-notify "Install audio packages"
-echo "NOTE: When prompted, select (y)es to remove pulseaudio and pulseaudio-bluetooth."
-# alsa-utils: For alsamixer (to increase base level of sound card)
-sudo pacman -S pipewire pipewire-alsa pipewire-jack pipewire-pulse alsa-utils helvum ardour
-
-echo "/usr/lib/pipewire-0.3/jack" | sudo tee /etc/ld.so.conf.d/pipewire-jack.conf
-sudo ldconfig
-
 
 # ---------------------------
-# grub
-# threadirqs = TODO
-# cpufreq.default_governor=performance = TODO
+# Update our system
 # ---------------------------
-notify "Modify GRUB options"
-sudo sed -i 's/GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet"/GRUB_CMDLINE_LINUX_DEFAULT="loglevel=3 quiet threadirqs cpufreq.default_governor=performance"/g' /etc/default/grub
-sudo grub-mkconfig -o /boot/grub/grub.cfg
+notify "Update the system"
+sudo dnf update
 
 
 # ---------------------------
 # limits
+# See https://wiki.linuxaudio.org/wiki/system_configuration for more information.
 # ---------------------------
 notify "Modify limits.d/audio.conf"
-# See https://wiki.linuxaudio.org/wiki/system_configuration for more information.
 echo '@audio - rtprio 90
 @audio - memlock unlimited' | sudo tee -a /etc/security/limits.d/audio.conf
 
 
 # ---------------------------
 # sysctl.conf
+# See https://wiki.linuxaudio.org/wiki/system_configuration for more information.
 # ---------------------------
 notify "Modify /etc/sysctl.conf"
-# See https://wiki.linuxaudio.org/wiki/system_configuration for more information.
 echo 'fs.inotify.max_user_watches=600000' | sudo tee -a /etc/sysctl.conf
 
 
@@ -84,35 +66,34 @@ touch ~/REAPER/reaper.ini
 
 
 # ------------------------------------------------------------------------------------
-# Wine (staging)
-# https://wiki.winehq.org/Winetricks
+# Wine and yabridge
+# https://copr.fedorainfracloud.org/coprs/patrickl/wine-tkg/
 # ------------------------------------------------------------------------------------
 
-# Enable multilib
-sudo cp /etc/pacman.conf /etc/pacman.conf.bak
-cat /etc/pacman.conf.bak | tr '\n' '\f' | sed -e 's/#\[multilib\]\f#Include = \/etc\/pacman.d\/mirrorlist/\[multilib\]\fInclude = \/etc\/pacman.d\/mirrorlist/g'  | tr '\f' '\n' | sudo tee /etc/pacman.conf
-sudo pacman -Syyu
+sudo dnf install realtime-setup -y
+sudo systemctl enable realtime-setup.service
+sudo systemctl enable realtime-entsk.service
+sudo usermod -a -G realtime $(whoami)
 
-# Install wine-staging
-sudo pacman -S wine-staging winetricks --noconfirm
+sudo dnf copr enable patrickl/wine-tkg -y
+sudo dnf copr enable patrickl/wine-mono -y
+sudo dnf copr enable patrickl/mingw-wine-gecko -y
+sudo dnf copr enable patrickl/vkd3d -y
+sudo dnf copr enable patrickl/wine-dxvk -y
+sudo dnf copr enable patrickl/winetricks -y
+sudo dnf copr enable patrickl/yabridge -y
 
-# NOTE: If wine-staging has regressions, you may need to downgrade.
-# You can do that by installing the downgrade package from AUR and
-# then specifying the version of wine-staging you want.
-# Note: as of 10th October 2021 the correct number is 82 (6.14)
-#yay -S downgrade --noconfirm
-#sudo env DOWNGRADE_FROM_ALA=1 downgrade wine-staging
+sudo dnf install wine wine-mono mingw32-wine-gecko mingw64-wine-gecko libvkd3d wine-dxvk* winetricks yabridge -y --refresh
 
-# Base wine packages required for proper plugin functionality
+echo "# Audio: wine and yabridge" >> ~/.bashrc
+echo "export WINEESYNC=1" >> ~/.bashrc
+echo "export WINEFSYNC=1" >> ~/.bashrc
+
+# Winetricks
+sudo dnf install winetricks -y
 winetricks corefonts
 
-# ------------------------------------------------------------------------------------
-# yabridge
-# ------------------------------------------------------------------------------------
-
-yay -S yabridge-bin --noconfirm
-
-# Create common VST paths
+# Create common VST paths for yabridge
 mkdir -p "$HOME/.wine/drive_c/Program Files/Steinberg/VstPlugins"
 mkdir -p "$HOME/.wine/drive_c/Program Files/Common Files/VST2"
 mkdir -p "$HOME/.wine/drive_c/Program Files/Common Files/VST3"
